@@ -1,10 +1,16 @@
 version: 2
 updates:
   - package-ecosystem: nuget
-    directory: /src/Petal.Core
+    directory: /
     schedule:
       interval: weekly
+    groups:
+      dotnet-dependencies:
+        patterns: ['*']
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+    groups:
+      github-actions:
+        patterns: ['*']

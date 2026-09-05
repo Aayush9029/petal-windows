@@ -1,7 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <PackageReference Include="org.k2fsa.sherpa.onnx" Version="1.13.5" />
-    <PackageReference Include="NAudio" Version="2.2.1" />
+    <PackageReference Include="NAudio" Version="3.0.1" />
+    <PackageReference Include="System.Numerics.Tensors" Version="10.0.11" />
     <EmbeddedResource Include="models.json" />
   </ItemGroup>
 </Project>

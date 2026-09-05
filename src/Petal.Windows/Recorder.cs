@@ -6,7 +6,7 @@ namespace Petal.Windows;
 
 internal sealed class Recorder : IDisposable
 {
-    readonly WaveInEvent input;
+    readonly WaveIn input;
     readonly WaveFileWriter writer;
     readonly TaskCompletionSource stopped = new(TaskCreationOptions.RunContinuationsAsynchronously);
     readonly List<(AudioSessionControl Session, float Volume)> ducked = [];
@@ -16,13 +16,14 @@ internal sealed class Recorder : IDisposable
     public event Action<Exception>? Failed;
     public Recorder(string path, int device, bool duck)
     {
-        input = new WaveInEvent { DeviceNumber = device, WaveFormat = new WaveFormat(16000, 16, 1), BufferMilliseconds = 50 };
+        input = new WaveIn { DeviceNumber = device, WaveFormat = new WaveFormat(16000, 16, 1), BufferMilliseconds = 50 };
         writer = new WaveFileWriter(path, input.WaveFormat);
         input.DataAvailable += (_, e) =>
         {
-            writer.Write(e.Buffer, 0, e.BytesRecorded);
+            var buffer = e.BufferSpan;
+            writer.Write(buffer);
             float peak = 0;
-            for (int i = 0; i < e.BytesRecorded - 1; i += 2) peak = Math.Max(peak, Math.Abs(BitConverter.ToInt16(e.Buffer, i) / 32768f));
+            for (int i = 0; i < buffer.Length - 1; i += 2) peak = Math.Max(peak, Math.Abs(BitConverter.ToInt16(buffer.Slice(i, 2)) / 32768f));
             Level?.Invoke(peak);
         };
         input.RecordingStopped += (_, e) => { writer.Dispose(); if (e.Exception != null) { stopped.TrySetException(e.Exception); Failed?.Invoke(e.Exception); } else stopped.TrySetResult(); };

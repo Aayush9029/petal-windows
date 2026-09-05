@@ -4,7 +4,7 @@
 
 - **Petal for macOS**, Aayush and contributors: MIT. Source: https://github.com/Aayush9029/petal. The original license is reproduced in LICENSE. The Windows port reuses the Petal icon and NVIDIA/OpenAI provider images. Provider marks belong to their respective owners.
 - **.NET / WPF**, Microsoft and contributors: MIT. https://github.com/dotnet/wpf and https://github.com/dotnet/runtime. Self-contained distributions include Microsoft's runtime license/notice files.
-- **NAudio 2.2.1**, Mark Heath and contributors: MIT. https://github.com/naudio/NAudio.
+- **NAudio 3.0.1**, Mark Heath and contributors: MIT. https://github.com/naudio/NAudio.
 - **sherpa-onnx 1.13.5**, k2-fsa and contributors: Apache-2.0. https://github.com/k2-fsa/sherpa-onnx. Includes native sherpa-onnx and ONNX Runtime components; see their upstream licenses and notices.
 - **ONNX Runtime**, Microsoft and contributors: MIT. https://github.com/microsoft/onnxruntime.
 - **Whisper**, OpenAI: MIT. https://github.com/openai/whisper. ONNX exports: https://huggingface.co/csukuangfj.
