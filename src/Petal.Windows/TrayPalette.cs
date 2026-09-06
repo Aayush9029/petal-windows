@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Markup;
 
 namespace Petal.Windows;
 
@@ -8,9 +9,11 @@ namespace Petal.Windows;
 internal sealed class TrayPalette
 {
     readonly AppController app;
-    readonly ContextMenu menu = new() { MinWidth = 380 };
+    readonly ContextMenu menu = new() { Width = 360, StaysOpen = false };
     readonly Action appChanged;
     MenuItem? record;
+    TextBlock? recordText;
+    TextBlock? shortcutText;
     IntPtr target;
     internal IntPtr RecordingTarget => target;
     public bool IsVisible => menu.IsOpen;
@@ -18,6 +21,26 @@ internal sealed class TrayPalette
     public TrayPalette(AppController app)
     {
         this.app = app;
+        // Keep native menu behavior and Fluent colors, without the icon/gesture gutters.
+        menu.Resources[typeof(MenuItem)] = (Style)XamlReader.Parse("""
+            <Style xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" TargetType="MenuItem">
+              <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+              <Setter Property="Template">
+                <Setter.Value>
+                  <ControlTemplate TargetType="MenuItem">
+                    <Border x:Name="Row" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Padding="12,8" Background="Transparent">
+                      <ContentPresenter ContentSource="Header" HorizontalAlignment="Stretch" RecognizesAccessKey="True"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                      <Trigger Property="IsHighlighted" Value="True">
+                        <Setter TargetName="Row" Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}"/>
+                      </Trigger>
+                    </ControlTemplate.Triggers>
+                  </ControlTemplate>
+                </Setter.Value>
+              </Setter>
+            </Style>
+            """);
         menu.Closed += (_, _) => { menu.Items.Clear(); record = null; };
         appChanged = () => { if (menu.IsOpen) UpdateRecordingAction(); };
         app.Changed += appChanged;
@@ -26,26 +49,37 @@ internal sealed class TrayPalette
     void UpdateRecordingAction()
     {
         if (record == null) return;
-        record.Header = app.Phase == "recording" ? "Finish recording" : "Start recording";
-        record.InputGestureText = app.Storage.Preferences.Shortcut;
+        recordText!.Text = app.Phase == "recording" ? "Finish recording" : "Start recording";
+        shortcutText!.Text = app.Storage.Preferences.Shortcut;
         record.IsEnabled = !app.Busy || app.Phase == "recording";
     }
 
     void Build()
     {
         menu.Items.Clear();
-        record = new MenuItem { Icon = Icons.Image("mic") };
+        var recordingRow = new DockPanel();
+        shortcutText = new TextBlock { FontSize = 12, VerticalAlignment = VerticalAlignment.Center };
+        shortcutText.SetResourceReference(TextBlock.ForegroundProperty, "TextFillColorSecondaryBrush");
+        DockPanel.SetDock(shortcutText, Dock.Right); recordingRow.Children.Add(shortcutText);
+        recordText = new TextBlock { TextWrapping = TextWrapping.NoWrap };
+        recordingRow.Children.Add(recordText);
+        record = new MenuItem { Header = recordingRow };
         record.Click += (_, _) => { Hide(); _ = app.ToggleRecording(target); };
         UpdateRecordingAction();
         menu.Items.Add(record);
         menu.Items.Add(new Separator());
-        menu.Items.Add(new MenuItem { Header = "Recent transcripts", IsEnabled = false });
+        var recentLabel = new TextBlock { Text = "Recent transcripts", FontSize = 12, FontWeight = FontWeights.Normal };
+        recentLabel.SetResourceReference(TextBlock.ForegroundProperty, "TextFillColorSecondaryBrush");
+        menu.Items.Add(new MenuItem { Header = recentLabel, IsEnabled = false });
 
         var entries = app.Storage.History.OrderByDescending(x => x.Timestamp).Take(4).ToList();
         if (entries.Count == 0) menu.Items.Add(new MenuItem { Header = "No recordings yet", IsEnabled = false });
         foreach (var entry in entries)
         {
-            var content = new StackPanel { Width = 230 };
+            var row = new Grid();
+            row.ColumnDefinitions.Add(new ColumnDefinition());
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            var content = new StackPanel { HorizontalAlignment = HorizontalAlignment.Stretch, Margin = new Thickness(0, 0, 16, 0) };
             content.Children.Add(new TextBlock {
                 Text = entry.Text.ReplaceLineEndings(" "),
                 TextTrimming = TextTrimming.CharacterEllipsis, TextWrapping = TextWrapping.NoWrap
@@ -56,7 +90,10 @@ internal sealed class TrayPalette
             };
             date.SetResourceReference(TextBlock.ForegroundProperty, "TextFillColorSecondaryBrush");
             content.Children.Add(date);
-            var item = new MenuItem { Header = content, ToolTip = "Copy transcript", Tag = entry.Id };
+            row.Children.Add(content);
+            var copy = Icons.Image("copy", 16, WindowsTheme.Secondary);
+            Grid.SetColumn(copy, 1); row.Children.Add(copy);
+            var item = new MenuItem { Header = row, ToolTip = "Copy transcript", Tag = entry.Id };
             System.Windows.Automation.AutomationProperties.SetName(item, "Copy transcript: " + entry.Text);
             item.Click += (_, _) => { Hide(); app.Copy(entry.Text); };
             menu.Items.Add(item);
@@ -67,7 +104,11 @@ internal sealed class TrayPalette
     {
         target = Native.GetForegroundWindow();
         Build();
-        menu.Placement = PlacementMode.MousePoint;
+        menu.Measure(new Size(menu.Width, double.PositiveInfinity));
+        var area = Native.TrayWorkArea();
+        menu.Placement = PlacementMode.AbsolutePoint;
+        menu.HorizontalOffset = area.Right - menu.Width - 8;
+        menu.VerticalOffset = Math.Max(area.Top + 8, area.Bottom - menu.DesiredSize.Height - 8);
         menu.IsOpen = true;
     }
 

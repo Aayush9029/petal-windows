@@ -8,6 +8,17 @@ namespace Petal.Windows;
 
 internal static class Native
 {
+    [StructLayout(LayoutKind.Sequential)] struct ScreenPoint { public int X, Y; }
+    [DllImport("user32.dll")] static extern IntPtr MonitorFromPoint(ScreenPoint point, uint flags);
+    [DllImport("shcore.dll")] static extern int GetDpiForMonitor(IntPtr monitor, int type, out uint x, out uint y);
+    internal static Rect TrayWorkArea()
+    {
+        var cursor = System.Windows.Forms.Control.MousePosition;
+        var area = System.Windows.Forms.Screen.FromPoint(cursor).WorkingArea;
+        var monitor = MonitorFromPoint(new ScreenPoint { X = cursor.X, Y = cursor.Y }, 2);
+        double scale = GetDpiForMonitor(monitor, 0, out uint dpi, out _) == 0 ? dpi / 96.0 : 1;
+        return new Rect(area.Left / scale, area.Top / scale, area.Width / scale, area.Height / scale);
+    }
     [DllImport("dwmapi.dll")] static extern int DwmSetWindowAttribute(IntPtr hwnd, int attribute, ref int value, int size);
     [DllImport("dwmapi.dll")] static extern int DwmExtendFrameIntoClientArea(IntPtr hwnd, ref Margins margins);
     [StructLayout(LayoutKind.Sequential)] struct Margins { public int Left, Right, Top, Bottom; }

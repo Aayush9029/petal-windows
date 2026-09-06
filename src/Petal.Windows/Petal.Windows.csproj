@@ -5,7 +5,7 @@
     <UseWindowsForms>true</UseWindowsForms>
     <AssemblyName>Petal</AssemblyName>
     <ApplicationIcon>Assets/petal.ico</ApplicationIcon>
-    <Version>0.3.5</Version>
+    <Version>0.3.6</Version>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../Petal.Core/Petal.Core.csproj" />
