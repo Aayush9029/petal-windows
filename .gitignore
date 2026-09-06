@@ -1,26 +1,24 @@
+# Build output and local runtimes
 .tools/
 .nuget/
+artifacts/
+test-data/
 **/bin/
 **/obj/
-reference/
-upstream/
-upstream.zip
-dotnet-install.ps1
-test-data/
-artifacts/
-research/
-*.user
+assets/readme/screenshots/theme.txt
 
+# Local settings and credentials
+.vs/
+.vscode/
+*.user
 .env
 .env.*
 !.env.example
 *.pfx
 *.p12
 *.key
+
+# Diagnostics and generated sandbox configurations
 *.dmp
 *.log
-.vs/
-.vscode/
 *.wsb
-
-assets/readme/screenshots/theme.txt

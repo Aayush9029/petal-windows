@@ -32,5 +32,3 @@ This checks startup and rendering without installed SDKs or network access. It d
 - For public trust, complete verified signing or Microsoft Store review.
 
 [Windows Sandbox configuration](https://learn.microsoft.com/en-us/windows/security/application-security/application-isolation/windows-sandbox/windows-sandbox-configure-using-wsb-file) · [SmartScreen guidance](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/smartscreen-reputation) · [Store distribution](https://learn.microsoft.com/en-us/windows/apps/distribute-through-store/how-to-distribute-your-win32-app-through-microsoft-store)
-
-On the development PC, enabling Windows Sandbox reported that a restart is required. The sandbox run is pending that restart. The normal host build, UI and playback checks have passed; see TESTING.md for their scope.

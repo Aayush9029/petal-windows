@@ -25,9 +25,10 @@ Record from any app with a shortcut you choose. Press it again to finish, and Pe
 
 Windows 10 22H2 or Windows 11, x64. Runs on the CPU; no NVIDIA GPU required. Model downloads are separate. This preview is unsigned, so Windows may show a security warning. It is not Microsoft Store approved.
 
-Prefer PowerShell? [Download and inspect the installer](scripts/install.ps1), then run:
+Prefer PowerShell? [Inspect the installer](scripts/install.ps1), then:
 
 ```powershell
+Invoke-WebRequest https://github.com/Aayush9029/petal-windows/releases/latest/download/install.ps1 -OutFile install.ps1
 .\install.ps1
 ```
 
@@ -51,6 +52,6 @@ Install the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0), th
 .\scripts\build.ps1 -Check -Package
 ```
 
-[Development notes](docs/DEVELOPMENT.md) · [Windows security and sandbox testing](docs/WINDOWS-SECURITY.md) · [Test results](docs/TESTING.md)
+[Development notes](docs/DEVELOPMENT.md) · [Windows security and sandbox testing](docs/WINDOWS-SECURITY.md)
 
 Built from [Petal for macOS](https://github.com/Aayush9029/petal) by Aayush. MIT licensed. [Third-party notices](THIRD-PARTY-NOTICES.md).
