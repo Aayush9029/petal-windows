@@ -32,7 +32,7 @@ public partial class App : System.Windows.Application
             catch (Exception ex) { await File.WriteAllTextAsync(e.Args[4] + ".error", ex.Message); Shutdown(1); }
             return;
         }
-        bool smoke = e.Args.FirstOrDefault() is "--ui-smoke" or "--integration-smoke" or "--shortcut-smoke" or "--playback-smoke" or "--performance-smoke" or "--preview";
+        bool smoke = e.Args.FirstOrDefault() is "--ui-smoke" or "--integration-smoke" or "--shortcut-smoke" or "--playback-smoke" or "--performance-smoke" or "--tray-render" or "--preview";
         singleInstance = new Mutex(true, "Local\\Petal.Windows.App", out var first);
         if (!first && !smoke) { System.Windows.MessageBox.Show("Petal is already running. Open it from the system tray.", "Petal"); Shutdown(); return; }
         try
@@ -49,6 +49,12 @@ public partial class App : System.Windows.Application
                 }
             }
             var controller = new AppController(storage, !smoke);
+            if (e.Args.FirstOrDefault() == "--tray-render")
+            {
+                try { var palette = new TrayPalette(controller); palette.RenderPreview(e.Args[2]); palette.Close(); }
+                catch (Exception ex) { Directory.CreateDirectory(e.Args[2]); File.WriteAllText(Path.Combine(e.Args[2], "failure.txt"), ex.ToString()); controller.Dispose(); Shutdown(1); return; }
+                controller.Dispose(); Shutdown(); return;
+            }
             var window = new SettingsWindow(controller);
             if (e.Args.FirstOrDefault() == "--preview") window.Title = "Petal. Preview";
             MainWindow = window;
