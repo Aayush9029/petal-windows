@@ -34,6 +34,12 @@
           "org.k2fsa.sherpa.onnx.runtime.win-x86": "1.13.5"
         }
       },
+      "System.Numerics.Tensors": {
+        "type": "Direct",
+        "requested": "[10.0.11, )",
+        "resolved": "10.0.11",
+        "contentHash": "4jNNt67NhCqf3bf2FN0mrsC+EH60L7Sny6poqVeiviB27Kw7TQzMmgn8HIaPc8E9EcuGusUyfeu21gLfzcBpDA=="
+      },
       "NAudio.Asio": {
         "type": "Transitive",
         "resolved": "3.0.1",
@@ -135,11 +141,6 @@
         "type": "Transitive",
         "resolved": "1.13.5",
         "contentHash": "5pdNAFMm/2lzNvvEFlRi7XZttg1l8869EKczh21UFNN0qhHZld7iZhOQXsuopfFGXZvCnr+bGfWy9pqUA530pw=="
-      },
-      "System.Numerics.Tensors": {
-        "type": "Transitive",
-        "resolved": "9.0.0",
-        "contentHash": "hyJB4UlpAi19Xr9AXzu2NuagKC4lPfHObNMEAA0HmqFz2rX7wKgzeYzO/jM/eBHDhnUGFFEjk5cOoJaxqg5J4A=="
       }
     },
     "net10.0-windows7.0/win-x64": {

@@ -21,7 +21,7 @@ public static class AudioFiles
         var result = new List<float>();
         float[] buffer = new float[SampleRate];
         int count;
-        while ((count = sample.Read(buffer, 0, buffer.Length)) > 0)
+        while ((count = sample.Read(buffer.AsSpan())) > 0)
         {
             if (result.Count + count > SampleRate * MaxSeconds) throw new InvalidDataException("Audio is too long.");
             result.AddRange(buffer.AsSpan(0, count).ToArray());

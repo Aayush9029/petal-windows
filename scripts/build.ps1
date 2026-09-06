@@ -7,14 +7,16 @@ $env:DOTNET_CLI_TELEMETRY_OPTOUT = '1'
 $env:DOTNET_CLI_HOME = Join-Path $projectRoot '.tools'
 Push-Location $projectRoot
 try {
-    & $sdk build src/Petal.Windows -c Release -p:RestoreLockedMode=true
+    & $sdk restore Petal.sln --locked-mode
+    if ($LASTEXITCODE -ne 0) { throw 'Locked dependency restore failed.' }
+    & $sdk build src/Petal.Windows -c Release --no-restore
     if ($LASTEXITCODE -ne 0) { throw 'Build failed.' }
     if ($Check) {
-        & $sdk run --project src/Petal.Checks -c Release -- checks test-data
+        & $sdk run --project src/Petal.Checks -c Release --no-restore -- checks test-data
         if ($LASTEXITCODE -ne 0) { throw 'Checks failed.' }
     }
     if ($Package) {
-        & $sdk publish src/Petal.Windows -c Release -r win-x64 --self-contained true -o artifacts/Petal-win-x64 -p:DebugType=None -p:DebugSymbols=false
+        & $sdk publish src/Petal.Windows -c Release -r win-x64 --self-contained true -o artifacts/Petal-win-x64 -p:DebugType=None -p:DebugSymbols=false -p:RestoreLockedMode=true
         if ($LASTEXITCODE -ne 0) { throw 'Publish failed.' }
         if ($CertificateThumbprint) {
             & (Join-Path $PSScriptRoot 'sign.ps1') -CertificateThumbprint $CertificateThumbprint -SignToolPath $SignToolPath
