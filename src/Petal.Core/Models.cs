@@ -56,6 +56,7 @@ public sealed class ModelStore(string root, HttpClient? client = null)
         {
             Directory.CreateDirectory(DirectoryFor(model));
             long finished = 0;
+            var progressClock = System.Diagnostics.Stopwatch.StartNew();
             foreach (var file in model.Files)
             {
                 ct.ThrowIfCancellationRequested();
@@ -82,7 +83,12 @@ public sealed class ModelStore(string root, HttpClient? client = null)
                             offset += read;
                             if (offset > file.Size) throw new IOException("Model download exceeded the expected size.");
                             await output.WriteAsync(buffer.AsMemory(0, read), ct);
-                            progress?.Report((double)(finished + offset) / model.Size);
+                            // Avoid flooding the UI dispatcher on fast connections.
+                            if (progressClock.ElapsedMilliseconds >= 100)
+                            {
+                                progress?.Report((double)(finished + offset) / model.Size);
+                                progressClock.Restart();
+                            }
                         }
                     }
                 }

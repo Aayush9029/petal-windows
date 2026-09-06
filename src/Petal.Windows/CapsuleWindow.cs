@@ -41,6 +41,8 @@ internal sealed class CapsuleWindow : Window
             }
         };
         dismiss.Tick += (_, _) => { dismiss.Stop(); Hide(); };
+        IsVisibleChanged += (_, _) => { if (!IsVisible) { timer.Stop(); dismiss.Stop(); } };
+        Closed += (_, _) => { timer.Stop(); dismiss.Stop(); };
     }
     void RefreshContent()
     {
@@ -67,6 +69,7 @@ internal sealed class CapsuleWindow : Window
     }
     public void ShowResult(string text)
     {
+        timer.Stop(); dismiss.Stop();
         phase = "result"; status.Text = text; Width = Math.Clamp(text.Length * 7 + 40, 244, 420);
         var area = SystemParameters.WorkArea; Left = area.Left + (area.Width - Width) / 2; Top = area.Bottom - Height - 16;
         RefreshContent(); Show(); dismiss.Start();

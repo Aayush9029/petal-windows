@@ -197,14 +197,18 @@ public sealed class SettingsWindow : Window
         {
             var progress = new Progress<double>(v =>
             {
-                if (modelControls.TryGetValue(model.Id, out var controls)) { controls.Progress.Value = v; controls.Detail.Text = $"Downloading… {v:P0}"; }
+                if (IsVisible && modelControls.TryGetValue(model.Id, out var controls)) { controls.Progress.Value = v; controls.Detail.Text = $"Downloading… {v:P0}"; }
             });
             await app.Models.DownloadAsync(model, progress, download.Token);
             app.Storage.Preferences.ModelId = model.Id; Save(); app.SetStatus(model.Name + " is ready");
         }
         catch (OperationCanceledException) { app.SetStatus("Download paused. Click Download to resume."); }
         catch (Exception ex) { app.SetStatus("Download failed: " + ex.Message); }
-        finally { downloadingId = null; download.Dispose(); download = null; UpdateModels(); }
+        finally
+        {
+            downloadingId = null; download.Dispose(); download = null;
+            if (IsVisible) UpdateModels(); else Close();
+        }
     }
     void UpdateModels()
     {
