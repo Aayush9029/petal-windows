@@ -9,8 +9,6 @@ namespace Petal.Windows;
 /// <summary>Renders the bundled, unmodified Lucide assets with WPF's vector drawing engine.</summary>
 public static class Icons
 {
-    public static ImageSource ChevronDown => Source("chevron-down", Brushes.LightGray);
-
     public static Image Image(string name, double size = 16, Brush? color = null) => new()
     {
         Source = Source(name, color ?? WindowsTheme.Foreground), Width = size, Height = size,

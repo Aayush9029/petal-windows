@@ -52,6 +52,6 @@ Install the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0), th
 .\scripts\build.ps1 -Check -Package
 ```
 
-[Development notes](docs/DEVELOPMENT.md) · [Windows security and sandbox testing](docs/WINDOWS-SECURITY.md) · [Test results](docs/TESTING.md)
+[Development notes](docs/DEVELOPMENT.md) · [Windows security and sandbox testing](docs/WINDOWS-SECURITY.md)
 
 Built from [Petal for macOS](https://github.com/Aayush9029/petal) by Aayush. MIT licensed. [Third-party notices](THIRD-PARTY-NOTICES.md).
