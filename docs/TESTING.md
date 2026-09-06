@@ -87,3 +87,11 @@ The final self-contained v0.3.1 package passed playback and dark UI smoke checks
 The History list was compacted to 58-DIP rows and 224-DIP width, with selection inset from rounded panel edges. Fictional demo entries and Windows-generated speech were used for the README screenshots in assets/readme/screenshots. The playback regression check passed after this layout change.
 
 Windows Sandbox was enabled on the development PC, but Windows reported RestartNeeded=true. The generated isolated configuration is XML-valid; execution is pending a host restart. No sandbox pass is claimed. Microsoft Defender was enabled and completed a custom scan of the release directory. Local checks do not confer Microsoft approval.
+
+## Published release checks
+
+The main-branch Windows build completed successfully on GitHub Actions: https://github.com/Aayush9029/petal-windows/actions/runs/33998874327.
+
+The public v0.3.1 ZIP was downloaded through scripts/install.ps1 into an isolated test installation. Its SHA-256 matched both SHA256SUMS.txt and the GitHub asset digest. The installed executable matched the packaged executable. Internet-zone metadata remained present. The downloaded app completed its UI smoke check without an installed SDK or DOTNET_ROOT.
+
+The final release folder completed a Microsoft Defender custom scan with no matching detections. This result is local scan evidence, not a Microsoft approval or a guarantee about future reputation checks. Windows Sandbox execution still requires the pending host restart.
