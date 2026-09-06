@@ -33,8 +33,11 @@ The packaged app also provides these test modes. Each takes `DATA_DIR OUTPUT_DIR
 | `--shortcut-smoke` | Key capture, registration, conflicts, and replacement |
 | `--integration-smoke` | Worker inference, clipboard insertion, microphone capture, storage, cancellation |
 | `--playback-smoke` | Play, pause, seek, navigation, search, and error recovery |
+| `--performance-smoke` | Repeated 1,000-entry history open/close, row recycling, window collection, and idle memory/CPU measurements |
 
 Integration checks need the `speech.wav`, Whisper Tiny, and Parakeet fixtures from the real-model checks. They briefly record and delete microphone audio, and paste only into their own test window. Run them before the playback checks to create fixture history.
+
+The performance check uses synthetic in-memory history and forces collection only for measurement. The normal app does not force garbage collection or trim its working set. Compare `performance.json` using the same computer and theme. Audio decoding and inference run in a disposable worker so their buffers and model allocations leave with the process.
 
 ## Release tools
 

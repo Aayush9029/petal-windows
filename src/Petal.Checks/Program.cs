@@ -115,6 +115,8 @@ await Check("audio round trip, stereo conversion, trim and silence", () =>
     Require(read.Length == samples.Length && Math.Abs(read[4100] - samples[4100]) < .0001, "PCM round trip");
     Require(AudioFiles.Trim(read).Length < read.Length, "Edge silence trimmed");
     Require(AudioFiles.Trim(new float[100]).Length == 0, "Silence is empty");
+    var fullSpeech = Enumerable.Repeat(.2f, 16000).ToArray();
+    Require(ReferenceEquals(fullSpeech, AudioFiles.Trim(fullSpeech)), "Untrimmed speech reuses its buffer");
     var stereo = Path.Combine(root, "stereo.wav");
     using (var writer = new NAudio.Wave.WaveFileWriter(stereo, new NAudio.Wave.WaveFormat(48000, 16, 2))) writer.WriteSamples(new float[96000], 0, 96000);
     Require(Math.Abs(AudioFiles.Read(stereo).Length - 16000) < 5, "48k stereo resampled to mono 16k");

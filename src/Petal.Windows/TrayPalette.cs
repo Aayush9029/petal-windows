@@ -8,6 +8,7 @@ namespace Petal.Windows;
 internal sealed class TrayPalette : Window
 {
     readonly AppController app;
+    readonly Action appChanged;
     IntPtr target;
     internal IntPtr RecordingTarget => target;
     readonly StackPanel results = new();
@@ -31,7 +32,10 @@ internal sealed class TrayPalette : Window
         SourceInitialized += (_, _) => Native.Acrylic(this);
         Deactivated += (_, _) => Hide();
         PreviewKeyDown += (_, e) => { if (e.Key == Key.Escape) { Hide(); e.Handled = true; } };
-        app.Changed += () => { if (IsVisible) { Refresh(); PositionNearTray(); } };
+        appChanged = () => { if (IsVisible) { Refresh(); PositionNearTray(); } };
+        app.Changed += appChanged;
+        IsVisibleChanged += (_, _) => { if (!IsVisible) results.Children.Clear(); };
+        Closed += (_, _) => app.Changed -= appChanged;
     }
 
     void Refresh()

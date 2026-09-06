@@ -12,6 +12,7 @@ namespace Petal.Windows;
 public sealed class SettingsWindow : Window
 {
     readonly AppController app;
+    readonly Action appChanged;
     readonly ListBox navigation = new() { BorderThickness = new Thickness(0), Background = Brushes.Transparent, Margin = new Thickness(12, 12, 12, 0) };
     readonly StackPanel pane = new() { Margin = new Thickness(0, 20, 0, 20) };
     readonly ContentControl pageHost = new();
@@ -78,9 +79,16 @@ public sealed class SettingsWindow : Window
         status.Text = app.Status; status.VerticalAlignment = VerticalAlignment.Center; status.Margin = new Thickness(0, 0, 16, 0); status.SetResourceReference(TextBlock.ForegroundProperty, "TextFillColorSecondaryBrush"); footer.Children.Add(status);
         var import = ActionButton("Transcribe file…", app.ImportFile); Grid.SetColumn(import, 1); footer.Children.Add(import); Grid.SetRow(footer, 2); detail.Children.Add(footer);
         Grid.SetColumn(detail, 1); root.Children.Add(detail); Content = root;
-        Closing += (_, e) => { e.Cancel = true; StopPlayback(); Hide(); };
+        Closing += (_, e) => { StopPlayback(); searchDelay.Stop(); if (download != null) { e.Cancel = true; Hide(); } };
         int historyCount = app.Storage.History.Count;
-        app.Changed += () => { status.Text = app.Status; import.IsEnabled = !app.Busy; if (page == "History" && historyCount != app.Storage.History.Count) RenderHistory(); historyCount = app.Storage.History.Count; UpdateModels(); };
+        appChanged = () => { if (!IsVisible) return; status.Text = app.Status; import.IsEnabled = !app.Busy; if (page == "History" && historyCount != app.Storage.History.Count) RenderHistory(); historyCount = app.Storage.History.Count; UpdateModels(); };
+        app.Changed += appChanged;
+        Closed += (_, _) => {
+            app.Changed -= appChanged;
+            if (ReferenceEquals(app.Settings, this)) app.Settings = null;
+            if (ReferenceEquals(System.Windows.Application.Current.MainWindow, this)) System.Windows.Application.Current.MainWindow = null;
+        };
+        IsVisibleChanged += (_, _) => { if (IsVisible) appChanged(); };
         playbackTimer.Tick += (_, _) => UpdatePlayback();
         searchDelay.Tick += (_, _) => { searchDelay.Stop(); if (page == "History") PopulateHistory(); };
         AllowDrop = true;
@@ -225,8 +233,11 @@ public sealed class SettingsWindow : Window
         searchRow.Children.Add(search); layout.Children.Add(searchRow);
         var split = new Grid(); split.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(224) }); split.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(12) }); split.ColumnDefinitions.Add(new ColumnDefinition());
         historySplit = split; historySearch = searchRow;
-        historyList = new ListBox { BorderThickness = new Thickness(0), Background = Brushes.Transparent, HorizontalContentAlignment = HorizontalAlignment.Stretch, Margin = new Thickness(5), Padding = new Thickness(0) };
-        historyList.SelectionChanged += (_, _) => { if (!filteringHistory) ShowTranscript((historyList.SelectedItem as ListBoxItem)?.Tag as Transcript); };
+        historyList = new HistoryList(TranscriptTitle, TranscriptMenu) { BorderThickness = new Thickness(0), Background = Brushes.Transparent, HorizontalContentAlignment = HorizontalAlignment.Stretch, Margin = new Thickness(5), Padding = new Thickness(0) };
+        VirtualizingPanel.SetIsVirtualizing(historyList, true);
+        VirtualizingPanel.SetVirtualizationMode(historyList, VirtualizationMode.Recycling);
+        ScrollViewer.SetCanContentScroll(historyList, true);
+        historyList.SelectionChanged += (_, _) => { if (!filteringHistory) ShowTranscript(historyList.SelectedItem as Transcript); };
         split.Children.Add(Surface(historyList));
         historyDetail = new StackPanel { Margin = new Thickness(18) };
         var detailScroll = new ScrollViewer { Content = historyDetail, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled };
@@ -240,20 +251,14 @@ public sealed class SettingsWindow : Window
     void PopulateHistory()
     {
         if (historyList == null) return;
-        var selected = (historyList.SelectedItem as ListBoxItem)?.Tag as Transcript;
+        var selected = historyList.SelectedItem as Transcript;
         filteringHistory = true;
-        historyList.Items.Clear();
-        foreach (var item in app.Storage.History.Where(x => TranscriptSearch.Matches(x, historyQuery)))
-        {
-            var row = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-            row.Children.Add(new TextBlock { Text = TranscriptTitle(item), FontSize = 13, TextWrapping = TextWrapping.NoWrap, TextTrimming = TextTrimming.CharacterEllipsis, MaxWidth = 174 });
-            var date = Text($"{item.Timestamp.LocalDateTime:MMM d, h:mm tt}  ·  {TimeSpan.FromSeconds(item.Duration):m\\:ss}", 11, "secondary"); date.TextWrapping = TextWrapping.NoWrap; date.Margin = new Thickness(0, 4, 0, 0); row.Children.Add(date);
-            var entry = new ListBoxItem { Content = row, Tag = item, Height = 58, MinHeight = 0, Padding = new Thickness(10, 4, 10, 4), Margin = new Thickness(1), VerticalContentAlignment = VerticalAlignment.Center, HorizontalContentAlignment = HorizontalAlignment.Stretch, ContextMenu = TranscriptMenu(item) };
-            historyList.Items.Add(entry); if (item.Id == selected?.Id) historyList.SelectedItem = entry;
-        }
+        var matches = app.Storage.History.Where(x => TranscriptSearch.Matches(x, historyQuery)).ToList();
+        historyList.ItemsSource = matches;
+        historyList.SelectedItem = matches.FirstOrDefault(item => item.Id == selected?.Id);
         if (historyList.SelectedItem == null && historyList.Items.Count > 0) historyList.SelectedIndex = 0;
         filteringHistory = false;
-        var next = (historyList.SelectedItem as ListBoxItem)?.Tag as Transcript;
+        var next = historyList.SelectedItem as Transcript;
         bool empty = historyList.Items.Count == 0;
         historySplit!.Visibility = empty ? Visibility.Collapsed : Visibility.Visible;
         historySearch!.Visibility = app.Storage.History.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
@@ -271,6 +276,17 @@ public sealed class SettingsWindow : Window
             hint.TextAlignment = TextAlignment.Center; hint.Margin = new Thickness(0, 6, 0, 0); historyEmpty.Children.Add(hint);
         }
         if (next?.Id != selected?.Id || next == null) ShowTranscript(next);
+    }
+    internal void CheckHistoryVirtualization()
+    {
+        UpdateLayout();
+        if (historyList == null || historyList.Items.Count < 100) return;
+        int realized = Enumerable.Range(0, historyList.Items.Count)
+            .Count(i => historyList.ItemContainerGenerator.ContainerFromIndex(i) != null);
+        if (realized >= 100) throw new InvalidOperationException("History is creating offscreen row controls.");
+        historyList.ScrollIntoView(historyList.Items[^1]); UpdateLayout();
+        if (historyList.ItemContainerGenerator.ContainerFromIndex(historyList.Items.Count - 1) == null)
+            throw new InvalidOperationException("History could not realize its last row.");
     }
     ContextMenu TranscriptMenu(Transcript item)
     {
@@ -430,7 +446,7 @@ public sealed class SettingsWindow : Window
             historyQuery = savedQuery; PopulateHistory();
             if (historySplit!.Visibility != Visibility.Visible) throw new InvalidOperationException("History panes did not return after clearing search.");
         }
-        var selected = (historyList?.SelectedItem as ListBoxItem)?.Tag as Transcript;
+        var selected = historyList?.SelectedItem as Transcript;
         if (selected != null) { var historyMenu = TranscriptMenu(selected); historyMenu.PlacementTarget = this; historyMenu.IsOpen = true; await Task.Delay(100); Capture(historyMenu, Path.Combine(directory, "history-menu.png"), (int)historyMenu.ActualWidth, (int)historyMenu.ActualHeight); historyMenu.IsOpen = false; }
         var menu = new TrayMenu(app).Build(); menu.IsOpen = true; await Task.Delay(100); Capture(menu, Path.Combine(directory, "tray-menu.png"), (int)menu.ActualWidth, (int)menu.ActualHeight); menu.IsOpen = false;
         app.Capsule.CaptureStates(directory);

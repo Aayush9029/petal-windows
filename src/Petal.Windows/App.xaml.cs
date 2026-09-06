@@ -15,8 +15,16 @@ public partial class App : System.Windows.Application
             try
             {
                 var model = ModelCatalog.Get(e.Args[1]);
-                using var engine = new SpeechEngine(model, e.Args[2]);
                 var samples = AudioFiles.Read(e.Args[3]);
+                if (e.Args.Length >= 7)
+                {
+                    double duration = (double)samples.Length / AudioFiles.SampleRate;
+                    if (bool.Parse(e.Args[6])) samples = AudioFiles.Trim(samples);
+                    await File.WriteAllTextAsync(e.Args[4] + ".duration", duration.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                    if (samples.Length < 1600) { await File.WriteAllTextAsync(e.Args[4], ""); Shutdown(); return; }
+                    AudioFiles.Write(e.Args[5], samples);
+                }
+                using var engine = new SpeechEngine(model, e.Args[2]);
                 var text = engine.Transcribe(samples);
                 await File.WriteAllTextAsync(e.Args[4], text);
                 Shutdown(0);
@@ -24,7 +32,7 @@ public partial class App : System.Windows.Application
             catch (Exception ex) { await File.WriteAllTextAsync(e.Args[4] + ".error", ex.Message); Shutdown(1); }
             return;
         }
-        bool smoke = e.Args.FirstOrDefault() is "--ui-smoke" or "--integration-smoke" or "--shortcut-smoke" or "--playback-smoke" or "--preview";
+        bool smoke = e.Args.FirstOrDefault() is "--ui-smoke" or "--integration-smoke" or "--shortcut-smoke" or "--playback-smoke" or "--performance-smoke" or "--preview";
         singleInstance = new Mutex(true, "Local\\Petal.Windows.App", out var first);
         if (!first && !smoke) { System.Windows.MessageBox.Show("Petal is already running. Open it from the system tray.", "Petal"); Shutdown(); return; }
         try
@@ -50,7 +58,8 @@ public partial class App : System.Windows.Application
             {
                 try
                 {
-                    if (e.Args[0] == "--playback-smoke") { Directory.CreateDirectory(e.Args[2]); await window.CheckPlayback(e.Args[2]); }
+                    if (e.Args[0] == "--performance-smoke") { window = null; await PerformanceChecks.Run(controller, e.Args[2]); }
+                    else if (e.Args[0] == "--playback-smoke") { Directory.CreateDirectory(e.Args[2]); await window.CheckPlayback(e.Args[2]); }
                     else if (e.Args[0] == "--shortcut-smoke") IntegrationChecks.Shortcuts(controller, e.Args[2]);
                     else if (e.Args[0] == "--integration-smoke") await IntegrationChecks.Run(controller, e.Args[2]);
                     else await window.CapturePages(e.Args[2]);

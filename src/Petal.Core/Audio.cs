@@ -1,6 +1,7 @@
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 using SherpaOnnx;
+using System.Runtime.InteropServices;
 
 namespace Petal.Core;
 
@@ -18,13 +19,15 @@ public static class AudioFiles
         if (sample.WaveFormat.Channels == 2) sample = new StereoToMonoSampleProvider(sample);
         if (sample.WaveFormat.Channels != 1) throw new InvalidDataException("Only mono and stereo audio are supported.");
         if (sample.WaveFormat.SampleRate != SampleRate) sample = new WdlResamplingSampleProvider(sample, SampleRate);
-        var result = new List<float>();
+        var result = new List<float>((int)Math.Clamp(Math.Ceiling(reader.TotalTime.TotalSeconds * SampleRate), 0, SampleRate * MaxSeconds));
         float[] buffer = new float[SampleRate];
         int count;
         while ((count = sample.Read(buffer.AsSpan())) > 0)
         {
             if (result.Count + count > SampleRate * MaxSeconds) throw new InvalidDataException("Audio is too long.");
-            result.AddRange(buffer.AsSpan(0, count).ToArray());
+            int offset = result.Count;
+            CollectionsMarshal.SetCount(result, offset + count);
+            buffer.AsSpan(0, count).CopyTo(CollectionsMarshal.AsSpan(result)[offset..]);
         }
         if (result.Count == 0) throw new InvalidDataException("The audio file is empty.");
         return result.ToArray();
@@ -38,7 +41,7 @@ public static class AudioFiles
         int last = Array.FindLastIndex(samples, x => Math.Abs(x) > threshold);
         first = Math.Max(0, first - SampleRate / 5);
         last = Math.Min(samples.Length - 1, last + SampleRate / 5);
-        return samples[first..(last + 1)];
+        return first == 0 && last == samples.Length - 1 ? samples : samples[first..(last + 1)];
     }
     public static void Write(string path, float[] samples)
     {

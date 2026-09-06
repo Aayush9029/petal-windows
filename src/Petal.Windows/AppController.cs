@@ -83,7 +83,8 @@ public sealed class AppController : IDisposable
     }
     public void ShowSettings(string? page = null)
     {
-        Settings?.Show();
+        Settings ??= new SettingsWindow(this);
+        Settings.Show();
         if (Settings != null) { Settings.WindowState = WindowState.Normal; Settings.Activate(); if (page != null) Settings.SelectPage(page); }
     }
     void ShowTray() { trayMenu ??= new TrayMenu(this); trayMenu.Open(); }
@@ -144,13 +145,9 @@ public sealed class AppController : IDisposable
         try
         {
             if (!await Models.VerifyAsync(model, ct)) throw new IOException("The model files are damaged. Delete the download from Models and download it again.");
-            var audio = await Task.Run(() => AudioFiles.Read(path), ct);
-            double duration = (double)audio.Length / AudioFiles.SampleRate;
-            if (Storage.Preferences.TrimSilence) audio = AudioFiles.Trim(audio);
-            if (audio.Length < 1600) { SetPhase("idle", "No speech detected."); return; }
-            await Task.Run(() => AudioFiles.Write(prepared, audio), ct);
             var info = new ProcessStartInfo(Environment.ProcessPath!) { UseShellExecute = false, CreateNoWindow = true };
-            foreach (var arg in new[] { "--worker", model.Id, Models.DirectoryFor(model), prepared, result }) info.ArgumentList.Add(arg);
+            // Audio decoding and its large buffers live only in the disposable worker.
+            foreach (var arg in new[] { "--worker", model.Id, Models.DirectoryFor(model), path, result, prepared, Storage.Preferences.TrimSilence.ToString() }) info.ArgumentList.Add(arg);
             using var worker = Process.Start(info) ?? throw new IOException("Could not start the speech engine.");
             ActiveWorkerId = worker.Id;
             using var registration = ct.Register(() => { try { if (!worker.HasExited) worker.Kill(true); } catch (InvalidOperationException) { } });
@@ -159,6 +156,7 @@ public sealed class AppController : IDisposable
             if (worker.ExitCode != 0) throw new IOException(File.Exists(result + ".error") ? await File.ReadAllTextAsync(result + ".error") : "The speech engine stopped unexpectedly. Try downloading the model again.");
             string text = (await File.ReadAllTextAsync(result, ct)).Trim();
             if (text.Length == 0) { SetPhase("idle", "No speech detected."); return; }
+            double duration = double.Parse(await File.ReadAllTextAsync(result + ".duration", ct), System.Globalization.CultureInfo.InvariantCulture);
             Storage.Add(text, model.Id, duration, source, prepared);
             string delivered = await Deliver(text, paste);
             SetPhase("idle", delivered);
@@ -169,7 +167,7 @@ public sealed class AppController : IDisposable
         finally
         {
             ActiveWorkerId = null;
-            File.Delete(prepared); File.Delete(result); File.Delete(result + ".error");
+            File.Delete(prepared); File.Delete(result); File.Delete(result + ".error"); File.Delete(result + ".duration");
             operation?.Dispose(); operation = null;
         }
     }
