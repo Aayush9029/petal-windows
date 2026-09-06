@@ -1,0 +1,115 @@
+[
+  {
+    "prefix": "",
+    "engine": "parakeet",
+    "files": [
+      {
+        "sha256": "179e50c43d1a9de79c8a24149a2f9bac6eb5981823f2a2ed88d655b24248db4e",
+        "size": 11845275,
+        "name": "decoder.int8.onnx"
+      },
+      {
+        "sha256": "acfc2b4456377e15d04f0243af540b7fe7c992f8d898d751cf134c3a55fd2247",
+        "size": 652184281,
+        "name": "encoder.int8.onnx"
+      },
+      {
+        "sha256": "3164c13fc2821009440d20fcb5fdc78bff28b4db2f8d0f0b329101719c0948b3",
+        "size": 6355277,
+        "name": "joiner.int8.onnx"
+      },
+      {
+        "sha256": "d58544679ea4bc6ac563d1f545eb7d474bd6cfa467f0a6e2c1dc1c7d37e3c35d",
+        "size": 93939,
+        "name": "tokens.txt"
+      }
+    ],
+    "revision": "2bda32ec70b097a55adaa07d9a7173915b43cc78",
+    "recommended": true,
+    "repo": "csukuangfj/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8",
+    "summary": "Multilingual dictation across 25 European languages.",
+    "id": "parakeet-v3",
+    "name": "Parakeet 0.6B V3"
+  },
+  {
+    "prefix": "small",
+    "engine": "whisper",
+    "files": [
+      {
+        "sha256": "acad50b5c782696e91b55914cc5ab4f756f1532f76e22aa6fc615f39fb69a8ee",
+        "size": 262226114,
+        "name": "small-decoder.int8.onnx"
+      },
+      {
+        "sha256": "4cbe7b22fa9026b843b60a68640c747de05bafb1a11b57edc0e66c232d9f33a9",
+        "size": 112442483,
+        "name": "small-encoder.int8.onnx"
+      },
+      {
+        "sha256": "b34b360dbb493e781e479794586d661700670d65564001f23024971d1f2fa126",
+        "size": 816730,
+        "name": "small-tokens.txt"
+      }
+    ],
+    "revision": "8f3c18b358db4d1f2fc1eae49d75cd20989e4309",
+    "recommended": false,
+    "repo": "csukuangfj/sherpa-onnx-whisper-small",
+    "summary": "Compact multilingual transcription with a balanced memory footprint.",
+    "id": "whisper-small",
+    "name": "Whisper Small"
+  },
+  {
+    "prefix": "turbo",
+    "engine": "whisper",
+    "files": [
+      {
+        "sha256": "20accd02388482eb3a46bd615631adfdc85e1eb2c7db9ea3f02a40ffe6b81547",
+        "size": 361080764,
+        "name": "turbo-decoder.int8.onnx"
+      },
+      {
+        "sha256": "b02dcdf54f348741e93fe732b67d933c8dcb6735655f710640143081db38878b",
+        "size": 674716297,
+        "name": "turbo-encoder.int8.onnx"
+      },
+      {
+        "sha256": "b34b360dbb493e781e479794586d661700670d65564001f23024971d1f2fa126",
+        "size": 816730,
+        "name": "turbo-tokens.txt"
+      }
+    ],
+    "revision": "2ca6ff69fc878651b770880507669577ac41c2ff",
+    "recommended": false,
+    "repo": "csukuangfj/sherpa-onnx-whisper-turbo",
+    "summary": "High-accuracy multilingual transcription, optimized for speed.",
+    "id": "whisper-turbo",
+    "name": "Whisper Large V3 Turbo"
+  },
+  {
+    "prefix": "tiny",
+    "engine": "whisper",
+    "files": [
+      {
+        "sha256": "d2fece8dd42771f1df975c6c0445770d0c292bf7547c2cae04a6c0cc57540925",
+        "size": 89855401,
+        "name": "tiny-decoder.int8.onnx"
+      },
+      {
+        "sha256": "d24fb083ae3b1041fc24e97971d60e280c9342201fbb67b0ab428a8b4a51a434",
+        "size": 12937772,
+        "name": "tiny-encoder.int8.onnx"
+      },
+      {
+        "sha256": "b34b360dbb493e781e479794586d661700670d65564001f23024971d1f2fa126",
+        "size": 816730,
+        "name": "tiny-tokens.txt"
+      }
+    ],
+    "revision": "65176e2deb88badc814a94058666cadccc29b61c",
+    "recommended": false,
+    "repo": "csukuangfj/sherpa-onnx-whisper-tiny",
+    "summary": "A small, fast model for trying local transcription.",
+    "id": "whisper-tiny",
+    "name": "Whisper Tiny"
+  }
+]

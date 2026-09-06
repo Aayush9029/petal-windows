@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <AssemblyName>Petal</AssemblyName>
+    <ApplicationIcon>Assets/petal.ico</ApplicationIcon>
+    <Version>0.3.1</Version>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Petal.Core/Petal.Core.csproj" />
+    <Resource Include="Assets/*" />
+    <Resource Include="Assets/Icons/*.svg" />
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+  </ItemGroup>
+</Project>
