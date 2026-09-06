@@ -35,4 +35,4 @@ Windows 10 22H2 or Windows 11, x64. [Unsigned preview](docs/WINDOWS-SECURITY.md)
 
 [Build and contribute](docs/DEVELOPMENT.md) · [Windows security](docs/WINDOWS-SECURITY.md)
 
-Built from [Petal for macOS](https://github.com/Aayush9029/petal) by Aayush. MIT licensed. [Third-party notices](THIRD-PARTY-NOTICES.md).
+[MIT license](LICENSE) · [Third-party notices](THIRD-PARTY-NOTICES.md)
