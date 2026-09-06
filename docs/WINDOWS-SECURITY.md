@@ -10,22 +10,9 @@ Trusted Authenticode signing requires a publisher certificate or a verified sign
 
 MSIX full-trust packaging is not the same as an AppContainer sandbox. Petal uses a global shortcut and pastes into other desktop apps; those integrations must be evaluated before an AppContainer conversion. The app is not advertised as AppContainer-isolated.
 
-## Windows Sandbox
-
-Enable the Windows Sandbox optional feature on a supported Windows Pro/Enterprise/Education system. A restart may be needed. Then:
-
-```powershell
-./scripts/test-sandbox.ps1 -Launch
-```
-
-The generated configuration disables networking, GPU sharing, microphone, camera, printer, and clipboard redirection. The release folder is read-only. Only the dedicated `artifacts/sandbox/results` folder is writable from the sandbox. The UI smoke test creates fresh data inside the disposable environment and writes screenshots to that results folder.
-
-This checks startup and rendering without installed SDKs or network access. It does not test microphone capture or model downloads because those are deliberately unavailable in this configuration. It does not isolate the normal installed app.
-
 ## Release checks
 
 - Run the core tests and the packaged UI/playback checks.
-- Run the Windows Sandbox startup check when available.
 - Scan the exact packaged files with up-to-date Microsoft Defender.
 - Publish SHA256SUMS.txt beside the ZIP.
 - Keep dependencies locked and review updates.
