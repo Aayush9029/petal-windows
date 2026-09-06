@@ -31,6 +31,9 @@ public sealed class SettingsWindow : Window
     ListBox? historyList;
     TextBox? searchBox;
     StackPanel? historyDetail;
+    Grid? historySplit;
+    FrameworkElement? historySearch;
+    StackPanel? historyEmpty;
     Button? playbackButton;
     readonly System.Windows.Threading.DispatcherTimer playbackTimer = new() { Interval = TimeSpan.FromMilliseconds(250) };
     Slider? playbackPosition;
@@ -221,6 +224,7 @@ public sealed class SettingsWindow : Window
         search.PreviewKeyDown += (_, e) => { if (e.Key == System.Windows.Input.Key.Escape) { search.Clear(); e.Handled = true; } };
         searchRow.Children.Add(search); layout.Children.Add(searchRow);
         var split = new Grid(); split.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(224) }); split.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(12) }); split.ColumnDefinitions.Add(new ColumnDefinition());
+        historySplit = split; historySearch = searchRow;
         historyList = new ListBox { BorderThickness = new Thickness(0), Background = Brushes.Transparent, HorizontalContentAlignment = HorizontalAlignment.Stretch, Margin = new Thickness(5), Padding = new Thickness(0) };
         historyList.SelectionChanged += (_, _) => { if (!filteringHistory) ShowTranscript((historyList.SelectedItem as ListBoxItem)?.Tag as Transcript); };
         split.Children.Add(Surface(historyList));
@@ -228,6 +232,8 @@ public sealed class SettingsWindow : Window
         var detailScroll = new ScrollViewer { Content = historyDetail, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled };
         var detailBorder = Surface(detailScroll); Grid.SetColumn(detailBorder, 2); split.Children.Add(detailBorder);
         Grid.SetRow(split, 1); layout.Children.Add(split); pageHost.Content = layout;
+        historyEmpty = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Visibility = Visibility.Collapsed };
+        Grid.SetRow(historyEmpty, 1); layout.Children.Add(historyEmpty);
         search.TextChanged += (_, _) => { historyQuery = search.Text; clear.IsEnabled = search.Text.Length > 0; searchDelay.Stop(); searchDelay.Start(); }; clear.IsEnabled = search.Text.Length > 0;
         searchBox = search; PopulateHistory();
     }
@@ -248,6 +254,22 @@ public sealed class SettingsWindow : Window
         if (historyList.SelectedItem == null && historyList.Items.Count > 0) historyList.SelectedIndex = 0;
         filteringHistory = false;
         var next = (historyList.SelectedItem as ListBoxItem)?.Tag as Transcript;
+        bool empty = historyList.Items.Count == 0;
+        historySplit!.Visibility = empty ? Visibility.Collapsed : Visibility.Visible;
+        historySearch!.Visibility = app.Storage.History.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
+        historyEmpty!.Visibility = empty ? Visibility.Visible : Visibility.Collapsed;
+        historyEmpty.Children.Clear();
+        if (empty)
+        {
+            bool noRecordings = app.Storage.History.Count == 0;
+            var icon = Icons.Image(noRecordings ? "audio-lines" : "search", 36, WindowsTheme.Secondary);
+            icon.HorizontalAlignment = HorizontalAlignment.Center; icon.Margin = new Thickness(0, 0, 0, 14);
+            historyEmpty.Children.Add(icon);
+            var title = Text(noRecordings ? "No recordings yet" : "No matching recordings", 18);
+            title.TextAlignment = TextAlignment.Center; historyEmpty.Children.Add(title);
+            var hint = Text(noRecordings ? "Your recordings will appear here." : "Try fewer words or clear the search.", 12, "secondary");
+            hint.TextAlignment = TextAlignment.Center; hint.Margin = new Thickness(0, 6, 0, 0); historyEmpty.Children.Add(hint);
+        }
         if (next?.Id != selected?.Id || next == null) ShowTranscript(next);
     }
     ContextMenu TranscriptMenu(Transcript item)
@@ -270,12 +292,7 @@ public sealed class SettingsWindow : Window
     void ShowTranscript(Transcript? item)
     {
         StopPlayback(); if (historyDetail == null) return; historyDetail.Children.Clear();
-        if (item == null)
-        {
-            var icon = Icons.Image(historyQuery.Length == 0 ? "audio-lines" : "search", 36, WindowsTheme.Secondary); icon.Margin = new Thickness(0, 70, 0, 14); historyDetail.Children.Add(icon);
-            historyDetail.Children.Add(Text(historyQuery.Length == 0 ? "No recordings yet" : "No matching recordings", 18));
-            historyDetail.Children.Add(Text(string.IsNullOrWhiteSpace(historyQuery) ? "Your recordings will appear here." : "Try fewer words or clear the search.", 12, "secondary")); return;
-        }
+        if (item == null) return;
         var toolbar = new DockPanel { Margin = new Thickness(0, 0, 0, 12) };
         var more = ActionButton("More", () => { }); more.ContextMenu = TranscriptMenu(item); more.Click += (_, _) => { more.ContextMenu = TranscriptMenu(item); more.ContextMenu.PlacementTarget = more; more.ContextMenu.Placement = PlacementMode.Bottom; more.ContextMenu.IsOpen = true; }; DockPanel.SetDock(more, Dock.Right); toolbar.Children.Add(more);
         var copy = ActionButton("Copy", () => app.Copy(item.Text)); copy.Margin = new Thickness(0, 0, 8, 0); DockPanel.SetDock(copy, Dock.Right); toolbar.Children.Add(copy);
@@ -392,6 +409,27 @@ public sealed class SettingsWindow : Window
         File.WriteAllLines(Path.Combine(directory, "theme.txt"), new[] { "High contrast: " + SystemParameters.HighContrast, "System window: " + SystemColors.WindowBrush, "System text: " + SystemColors.WindowTextBrush }.Concat(new[] { "CardBackgroundFillColorDefaultBrush", "CardStrokeColorDefaultBrush", "TextFillColorPrimaryBrush", "TextFillColorSecondaryBrush", "SolidBackgroundFillColorBaseBrush", "ControlFillColorDefaultBrush" }.Select(key => key + ": " + TryFindResource(key))));
         foreach (var name in pages) { SelectPage(name); await Task.Delay(180); UpdateLayout(); Capture((FrameworkElement)Content, Path.Combine(directory, name.ToLowerInvariant() + ".png"), (int)((FrameworkElement)Content).ActualWidth, (int)((FrameworkElement)Content).ActualHeight); }
         SelectPage("History");
+        void CheckEmptyHistory()
+        {
+            UpdateLayout();
+            if (historySplit!.Visibility != Visibility.Collapsed || historyEmpty!.Visibility != Visibility.Visible)
+                throw new InvalidOperationException("Empty history must hide the transcript panes.");
+            var parent = (FrameworkElement)historyEmpty.Parent;
+            var position = historyEmpty.TranslatePoint(new Point(0, 0), parent);
+            double top = historySearch!.Visibility == Visibility.Collapsed ? 0 : historySearch.ActualHeight;
+            if (Math.Abs(position.X + historyEmpty.ActualWidth / 2 - parent.ActualWidth / 2) > 1 ||
+                Math.Abs(position.Y + historyEmpty.ActualHeight / 2 - (top + parent.ActualHeight) / 2) > 1)
+                throw new InvalidOperationException("Empty history must be centered in its available space.");
+        }
+        if (app.Storage.History.Count == 0) CheckEmptyHistory();
+        else
+        {
+            var savedQuery = historyQuery;
+            historyQuery = "__petal_no_matching_transcript__"; PopulateHistory(); CheckEmptyHistory();
+            Capture((FrameworkElement)Content, Path.Combine(directory, "history-no-matches.png"), (int)((FrameworkElement)Content).ActualWidth, (int)((FrameworkElement)Content).ActualHeight);
+            historyQuery = savedQuery; PopulateHistory();
+            if (historySplit!.Visibility != Visibility.Visible) throw new InvalidOperationException("History panes did not return after clearing search.");
+        }
         var selected = (historyList?.SelectedItem as ListBoxItem)?.Tag as Transcript;
         if (selected != null) { var historyMenu = TranscriptMenu(selected); historyMenu.PlacementTarget = this; historyMenu.IsOpen = true; await Task.Delay(100); Capture(historyMenu, Path.Combine(directory, "history-menu.png"), (int)historyMenu.ActualWidth, (int)historyMenu.ActualHeight); historyMenu.IsOpen = false; }
         var menu = new TrayMenu(app).Build(); menu.IsOpen = true; await Task.Delay(100); Capture(menu, Path.Combine(directory, "tray-menu.png"), (int)menu.ActualWidth, (int)menu.ActualHeight); menu.IsOpen = false;
